@@ -1,16 +1,22 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
+using System.Globalization;
 using System.Text.Json;
 
 namespace Luck.Walnut.Client
 {
     internal sealed class LuckWalnutJsonConfigurationJsonParser
     {
-        private LuckWalnutJsonConfigurationJsonParser() { }
+        private LuckWalnutJsonConfigurationJsonParser()
+        {
+            _data = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        private readonly Dictionary<string, string?> _data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-        private readonly Stack<string> _paths = new Stack<string>();
+        }
 
-        public static IDictionary<string, string?> Parse(IDictionary<string, IDictionary<string, string>> pairs,string appId)
+        private readonly IDictionary<string, string> _data = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Stack<string> _context = new Stack<string>();
+        private string _currentPath;
+        public static IDictionary<string, string?> Parse(IDictionary<string, IDictionary<string, string>> pairs, string appId)
             => new LuckWalnutJsonConfigurationJsonParser().JsonParse(pairs, appId);
 
         private IDictionary<string, string?> JsonParse(IDictionary<string, IDictionary<string, string>> pairs, string appId)
@@ -22,7 +28,14 @@ namespace Luck.Walnut.Client
             {
                 foreach (var config in pair.Value)
                 {
-                    configDic.Add(config.Key, config.Value);
+
+                    _data.Clear();
+                    var jsonConfig = JObject.Parse(config.Value);
+                    VisitJObject(jsonConfig);
+                    foreach (var data in _data)
+                    {
+                        configDic.Add(string.Join(":", config.Key, data.Key), data.Value);
+                    }
                 }
                 if (pair.Key == appId)
                 {
@@ -34,91 +47,99 @@ namespace Luck.Walnut.Client
 
                 }
             }
-
-
-            //var jsonDocumentOptions = new JsonDocumentOptions
-            //{
-            //    CommentHandling = JsonCommentHandling.Skip,
-            //    AllowTrailingCommas = true,
-            //};
-            //using (JsonDocument doc = JsonDocument.Parse(input, jsonDocumentOptions))
-            //{
-            //    if (doc.RootElement.ValueKind != JsonValueKind.Object)
-            //    {
-
-            //    }
-            //    VisitElement(doc.RootElement);
-            //}
-
-
-
-
-
             return configData;
         }
 
-        private void VisitElement(JsonElement element)
+        private void VisitJObject(JObject? jObject)
         {
-            var isEmpty = true;
-
-            foreach (JsonProperty property in element.EnumerateObject())
+            foreach (var property in jObject.Properties())
             {
-                isEmpty = false;
-                EnterContext(property.Name);
-                VisitValue(property.Value);
-                ExitContext();
-            }
+                try
+                {
+                    EnterContext(property.Name);
+                    VisitProperty(property);
 
-            if (isEmpty && _paths.Count > 0)
-            {
-                _data[_paths.Peek()] = null;
+                }
+                finally
+                {
+                    ExitContext();
+                }
             }
         }
 
-        private void VisitValue(JsonElement value)
+        private void VisitProperty(JProperty property)
         {
-            //Debug.Assert(_paths.Count > 0);
+            VisitToken(property.Value);
+        }
 
-            switch (value.ValueKind)
+        private void VisitToken(JToken token)
+        {
+            switch (token.Type)
             {
-                case JsonValueKind.Object:
-                    VisitElement(value);
+                case JTokenType.Object:
+                    VisitJObject(token.Value<JObject>());
                     break;
 
-                case JsonValueKind.Array:
-                    int index = 0;
-                    foreach (JsonElement arrayElement in value.EnumerateArray())
-                    {
-                        EnterContext(index.ToString());
-                        VisitValue(arrayElement);
-                        ExitContext();
-                        index++;
-                    }
+                case JTokenType.Array:
+                    VisitArray(token.Value<JArray>());
                     break;
 
-                case JsonValueKind.Number:
-                case JsonValueKind.String:
-                case JsonValueKind.True:
-                case JsonValueKind.False:
-                case JsonValueKind.Null:
-                    string key = _paths.Peek();
-                    if (_data.ContainsKey(key))
-                    {
-                    }
-                    _data[key] = value.ToString();
+                case JTokenType.Integer:
+                case JTokenType.Float:
+                case JTokenType.String:
+                case JTokenType.Boolean:
+                case JTokenType.Bytes:
+                case JTokenType.Raw:
+                case JTokenType.Null:
+                case JTokenType.Date:
+                    VisitPrimitive(token.Value<JValue>());
                     break;
 
                 default:
-                    throw new ArgumentNullException();
+                    //Log.Error($"不支持此{token}-{token.Type}类型的转换");
+                    throw new FormatException($"不支持此{token}-{token.Type}类型的转换");
+                    //throw new FormatException(Resources.FormatError_UnsupportedJSONToken(
+                    //    _reader.TokenType,
+                    //    _reader.Path,
+                    //    _reader.LineNumber,
+                    //    _reader.LinePosition));
             }
         }
 
-        private void EnterContext(string context) =>
-            _paths.Push(_paths.Count > 0 ?
-                _paths.Peek() + ConfigurationPath.KeyDelimiter + context :
-                context);
+        private void VisitArray(JArray? array)
+        {
+            for (int index = 0; index < array.Count; index++)
+            {
+                EnterContext(index.ToString());
+                VisitToken(array[index]);
+                ExitContext();
+            }
+        }
 
-        private void ExitContext() => _paths.Pop();
+        private void VisitPrimitive(JValue data)
+        {
+            var key = _currentPath;
+
+            if (_data.ContainsKey(key))
+            {
+                //throw new FormatException(Resources.FormatError_KeyIsDuplicated(key));
+                //Log.Error($"key：{key}重复");
+                throw new FormatException($"key：{key}重复");
+            }
+            _data[key] = data.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private void EnterContext(string context)
+        {
+            _context.Push(context);
+            _currentPath = ConfigurationPath.Combine(_context.Reverse());
+        }
+
+        private void ExitContext()
+        {
+            _context.Pop();
+            _currentPath = ConfigurationPath.Combine(_context.Reverse());
+        }
 
 
     }

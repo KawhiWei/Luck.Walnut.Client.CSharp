@@ -23,14 +23,19 @@ namespace Luck.Walnut.Client
 
         private void SetProjectsConfigs(IEnumerable<LuckWalnutConfigAdapter> luckWalnutConfigs)
         {
-            var configDic = luckWalnutConfigs.ToDictionary(config=>config.Key,config=>config.Value);
+            try
+            {
+                var configDic = luckWalnutConfigs.ToDictionary(config => config.Key, config => config.Value);
 
-            _projectsConfigs[_appId]=configDic;
+                _projectsConfigs[_appId] = configDic;
+            }
+            catch (Exception es)
+            {
+
+                throw;
+            }
 
         }
-
-
-
 
         private void GetProjectConfigs()
         {

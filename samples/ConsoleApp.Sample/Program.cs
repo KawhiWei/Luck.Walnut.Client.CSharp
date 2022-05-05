@@ -5,6 +5,6 @@ Console.WriteLine("Hello, World!");
 
 var test = new LuckWalnutConfigCenterHelper("walnut", "test");
 
-await test.GetProjectConfigs();
+//await test.GetProjectConfigs();
 
 Console.ReadLine();
