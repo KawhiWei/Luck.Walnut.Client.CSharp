@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json.Linq;
-using System.Globalization;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Luck.Walnut.Client
 {
+    /// <summary>
+    /// 
+    /// </summary>
     internal sealed class LuckWalnutJsonConfigurationJsonParser
     {
         private LuckWalnutJsonConfigurationJsonParser()
@@ -28,10 +30,16 @@ namespace Luck.Walnut.Client
             {
                 foreach (var config in pair.Value)
                 {
-
                     _data.Clear();
-                    var jsonConfig = JObject.Parse(config.Value);
-                    VisitJObject(jsonConfig);
+                    var jsonDocumentOptions = new JsonDocumentOptions
+                    {
+                        CommentHandling = JsonCommentHandling.Skip,
+                        AllowTrailingCommas = true,
+                    };
+                    using (JsonDocument doc = JsonDocument.Parse(config.Value, jsonDocumentOptions))
+                    {
+                        VisitElement(doc.RootElement);
+                    }
                     foreach (var data in _data)
                     {
                         configDic.Add(string.Join(":", config.Key, data.Key), data.Value);
@@ -50,97 +58,68 @@ namespace Luck.Walnut.Client
             return configData;
         }
 
-        private void VisitJObject(JObject? jObject)
+        private void VisitElement(JsonElement element)
         {
-            foreach (var property in jObject.Properties())
-            {
-                try
-                {
-                    EnterContext(property.Name);
-                    VisitProperty(property);
+            var isEmpty = true;
 
-                }
-                finally
-                {
-                    ExitContext();
-                }
+            foreach (JsonProperty property in element.EnumerateObject())
+            {
+                isEmpty = false;
+                EnterContext(property.Name);
+                VisitValue(property.Value);
+                ExitContext();
+            }
+
+            if (isEmpty && _context.Count > 0)
+            {
+                _data[_context.Peek()] = null;
             }
         }
 
-        private void VisitProperty(JProperty property)
+        private void VisitValue(JsonElement value)
         {
-            VisitToken(property.Value);
-        }
+            Debug.Assert(_context.Count > 0);
 
-        private void VisitToken(JToken token)
-        {
-            switch (token.Type)
+            switch (value.ValueKind)
             {
-                case JTokenType.Object:
-                    VisitJObject(token.Value<JObject>());
+                case JsonValueKind.Object:
+                    VisitElement(value);
                     break;
 
-                case JTokenType.Array:
-                    VisitArray(token.Value<JArray>());
+                case JsonValueKind.Array:
+                    int index = 0;
+                    foreach (JsonElement arrayElement in value.EnumerateArray())
+                    {
+                        EnterContext(index.ToString());
+                        VisitValue(arrayElement);
+                        ExitContext();
+                        index++;
+                    }
                     break;
 
-                case JTokenType.Integer:
-                case JTokenType.Float:
-                case JTokenType.String:
-                case JTokenType.Boolean:
-                case JTokenType.Bytes:
-                case JTokenType.Raw:
-                case JTokenType.Null:
-                case JTokenType.Date:
-                    VisitPrimitive(token.Value<JValue>());
+                case JsonValueKind.Number:
+                case JsonValueKind.String:
+                case JsonValueKind.True:
+                case JsonValueKind.False:
+                case JsonValueKind.Null:
+                    string key = _context.Peek();
+                    if (_data.ContainsKey(key))
+                    {
+                        //throw new FormatException(SR.Format(SR.Error_KeyIsDuplicated, key));
+                    }
+                    _data[key] = value.ToString();
                     break;
 
                 default:
-                    //Log.Error($"不支持此{token}-{token.Type}类型的转换");
-                    throw new FormatException($"不支持此{token}-{token.Type}类型的转换");
-                    //throw new FormatException(Resources.FormatError_UnsupportedJSONToken(
-                    //    _reader.TokenType,
-                    //    _reader.Path,
-                    //    _reader.LineNumber,
-                    //    _reader.LinePosition));
+                    throw new FormatException("");
             }
         }
 
-        private void VisitArray(JArray? array)
-        {
-            for (int index = 0; index < array.Count; index++)
-            {
-                EnterContext(index.ToString());
-                VisitToken(array[index]);
-                ExitContext();
-            }
-        }
+        private void EnterContext(string context) =>
+            _context.Push(_context.Count > 0 ?
+                _context.Peek() + ConfigurationPath.KeyDelimiter + context :
+                context);
 
-        private void VisitPrimitive(JValue data)
-        {
-            var key = _currentPath;
-
-            if (_data.ContainsKey(key))
-            {
-                //throw new FormatException(Resources.FormatError_KeyIsDuplicated(key));
-                //Log.Error($"key：{key}重复");
-                throw new FormatException($"key：{key}重复");
-            }
-            _data[key] = data.ToString(CultureInfo.InvariantCulture);
-        }
-
-        private void EnterContext(string context)
-        {
-            _context.Push(context);
-            _currentPath = ConfigurationPath.Combine(_context.Reverse());
-        }
-
-        private void ExitContext()
-        {
-            _context.Pop();
-            _currentPath = ConfigurationPath.Combine(_context.Reverse());
-        }
-
-
+        private void ExitContext() => _context.Pop();
     }
 }
