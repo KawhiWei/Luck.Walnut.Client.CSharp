@@ -7,17 +7,16 @@ namespace Luck.Walnut.Client
     {
 
         private ManualResetEventSlim _manualResetEventSlim;
-        private string _appId;
-        private string _environment;
+        private readonly LuckWalnutConfig _luckWalnutConfig;
+        private string _serverUri;
         private IDictionary<string, IDictionary<string, string>> _projectsConfigs;
         private readonly ILuckWalnutSourceManager _luckWalnutSourceManager;
 
-        public LuckWalnutConfigCenterHelper(string appId, string environment)
+        public LuckWalnutConfigCenterHelper(LuckWalnutConfig luckWalnutConfig)
         {
             _manualResetEventSlim = new ManualResetEventSlim(false);
-            _appId = appId;
-            _environment = environment;
-            _luckWalnutSourceManager = new LuckWalnutSourceManager(_appId, _environment);
+            _luckWalnutConfig= luckWalnutConfig;
+            _luckWalnutSourceManager = new LuckWalnutSourceManager(_luckWalnutConfig);
             _projectsConfigs = new BlockingDictionary<string, IDictionary<string, string>>();
         }
 
@@ -27,7 +26,7 @@ namespace Luck.Walnut.Client
             {
                 var configDic = luckWalnutConfigs.ToDictionary(config => config.Key, config => config.Value);
 
-                _projectsConfigs[_appId] = configDic;
+                _projectsConfigs[_luckWalnutConfig.AppId] = configDic;
             }
             catch (Exception es)
             {
@@ -39,48 +38,43 @@ namespace Luck.Walnut.Client
 
         private void GetProjectConfigs()
         {
-            var task=Task.Factory.StartNew(async () =>
-            {
-                try
-                {
-                    Exception? exception = null;
-                    IEnumerable<LuckWalnutConfigAdapter>? projectsConfigs = null;
+            var task = Task.Factory.StartNew(async () =>
+              {
+                  try
+                  {
+                      Exception? exception = null;
+                      IEnumerable<LuckWalnutConfigAdapter>? projectsConfigs = null;
 
-                    for (int i = 0; i < 5; i++)  //尝试多次，防止单次运行出错
-                    {
-                        try
-                        {
-                            projectsConfigs = await _luckWalnutSourceManager.GetProjectConfigs();
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            exception = ex;
-                        }
-                    }
-                    if (projectsConfigs == null)
-                    {
-                        //Log.Error(exception, "统一配置获取失败");
-                        throw exception;
-                    }
-                    SetProjectsConfigs(projectsConfigs);
-                }
+                      for (int i = 0; i < 5; i++)  //尝试多次，防止单次运行出错
+                      {
+                          try
+                          {
+                              projectsConfigs = await _luckWalnutSourceManager.GetProjectConfigs();
+                              break;
+                          }
+                          catch (Exception ex)
+                          {
+                              exception = ex;
+                          }
+                      }
+                      if (projectsConfigs == null)
+                      {
+                          //Log.Error(exception, "统一配置获取失败");
+                          throw exception;
+                      }
+                      SetProjectsConfigs(projectsConfigs);
+                  }
 
-                finally
-                {
-                    _manualResetEventSlim.Set();
-                }
+                  finally
+                  {
+                      _manualResetEventSlim.Set();
+                  }
 
 
-            });
-
+              });
 
             _manualResetEventSlim.Wait();
             task.Wait();
-
-
-            Console.WriteLine("asdnaskdkasdkasnkkdlasm");
-
         }
 
         public IDictionary<string, IDictionary<string, string>> GetConfig()

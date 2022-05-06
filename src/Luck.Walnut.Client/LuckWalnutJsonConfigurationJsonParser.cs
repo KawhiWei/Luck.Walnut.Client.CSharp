@@ -30,19 +30,26 @@ namespace Luck.Walnut.Client
             {
                 foreach (var config in pair.Value)
                 {
-                    _data.Clear();
-                    var jsonDocumentOptions = new JsonDocumentOptions
+                    try
                     {
-                        CommentHandling = JsonCommentHandling.Skip,
-                        AllowTrailingCommas = true,
-                    };
-                    using (JsonDocument doc = JsonDocument.Parse(config.Value, jsonDocumentOptions))
-                    {
-                        VisitElement(doc.RootElement);
+                        _data.Clear();
+                        var jsonDocumentOptions = new JsonDocumentOptions
+                        {
+                            CommentHandling = JsonCommentHandling.Skip,
+                            AllowTrailingCommas = true,
+                        };
+                        using (JsonDocument doc = JsonDocument.Parse(config.Value, jsonDocumentOptions))
+                        {
+                            VisitElement(doc.RootElement);
+                        }
+                        foreach (var data in _data)
+                        {
+                            configDic.Add(string.Join(":", config.Key, data.Key), data.Value);
+                        }
                     }
-                    foreach (var data in _data)
+                    catch
                     {
-                        configDic.Add(string.Join(":", config.Key, data.Key), data.Value);
+                        configDic[config.Key] = config.Value;
                     }
                 }
                 if (pair.Key == appId)

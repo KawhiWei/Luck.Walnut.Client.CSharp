@@ -4,6 +4,8 @@ namespace Luck.Walnut.Client
 {
     public class LuckWalnutConfigurationSource : IConfigurationSource
     {
+        public LuckWalnutConfig LuckWalnutConfig { get; set; } = default!;
+
         /// <summary>
         /// 应用标识
         /// </summary>

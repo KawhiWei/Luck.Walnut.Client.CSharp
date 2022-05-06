@@ -16,13 +16,12 @@ namespace Luck.Walnut.Client
         public LuckWalnutConfigurationProvider(LuckWalnutConfigurationSource source)
         {
             Source = source;
-            LuckWalnutConfigCenterHelper = new LuckWalnutConfigCenterHelper(source.AppId, source.Environment);
+            LuckWalnutConfigCenterHelper = new LuckWalnutConfigCenterHelper(Source.LuckWalnutConfig);
         }
 
 
         public override void Load()
         {
-
             var test= LuckWalnutConfigCenterHelper.GetConfig();
             Data= LuckWalnutJsonConfigurationJsonParser.Parse(test,Source.AppId);
             base.Load();

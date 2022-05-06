@@ -3,7 +3,7 @@ using Luck.Walnut.Client;
 
 Console.WriteLine("Hello, World!");
 
-var test = new LuckWalnutConfigCenterHelper("walnut", "test");
+//var test = new LuckWalnutConfigCenterHelper("walnut", "test","");
 
 //await test.GetProjectConfigs();
 
