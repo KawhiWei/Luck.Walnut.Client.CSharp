@@ -23,7 +23,7 @@ namespace Luck.Walnut.Client
         public override void Load()
         {
             var test= LuckWalnutConfigCenterHelper.GetConfig();
-            Data= LuckWalnutJsonConfigurationJsonParser.Parse(test,Source.AppId);
+            Data= LuckWalnutJsonConfigurationJsonParser.Parse(test,Source.LuckWalnutConfig.AppId);
             base.Load();
         }
 

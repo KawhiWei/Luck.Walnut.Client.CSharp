@@ -59,13 +59,13 @@ namespace Luck.Walnut.Client.WebSocketClients
                 await CallOnConnected();
                 return true;
             }
-            catch (ArgumentException)
+            catch (ArgumentException ex)
             {
                 var errorMessage = "必须以'ws://'或'wss://'开头，也许你应该设置ignoreScheme参数为ture";
                 _logger.LogError($"uri{errorMessage}");
                 throw new ArgumentException(errorMessage, nameof(uri));
             }
-            catch (TaskCanceledException)
+            catch (TaskCanceledException ex)
             {
                 _logger.LogWarning($"连接到{uri}超时");
                 return false;

@@ -8,5 +8,7 @@
         public string Environment { get; set; } = default!;
 
         public string ServerUri { get; set; } = default!;
+
+        public string WebSocketUri { get; set; } = default!;
     }
 }

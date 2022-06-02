@@ -1,5 +1,7 @@
-﻿using Luck.Walnut.Client;
+﻿using Google.Protobuf.WellKnownTypes;
+using Luck.Walnut.Client;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.Configuration
 {
@@ -24,7 +26,16 @@ namespace Microsoft.Extensions.Configuration
 
             luckWalnutConfig.Environment = environment;
             luckWalnutConfig.AppId = appId;
+            
+            services.Configure<LuckWalnutConfig>(x =>
+            {
+                x.Environment = luckWalnutConfig.Environment;
+                x.AppId = luckWalnutConfig.AppId;
+                x.ServerUri = luckWalnutConfig.ServerUri;
+                x.WebSocketUri = luckWalnutConfig.WebSocketUri;
+            });
             configurationbuilder.AddLuckWalnutConfig(configuration, luckWalnutConfig, configureSource);
+            services.AddHostedService<WebSocketBackgroundService>();
             return services;
 
         }
@@ -34,8 +45,6 @@ namespace Microsoft.Extensions.Configuration
             Action<LuckWalnutConfigurationSource> createSource = source =>
             {
                 source.LuckWalnutConfig = luckWalnutConfig;
-                source.AppId = /*configuration["APP_UK"]*/"walnut";
-                source.Environment = /*configuration["ENVIRONMENT"]*/"test";
                 if (configureSource is not null)
                 {
                     configureSource(source);

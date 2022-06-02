@@ -4,17 +4,10 @@ namespace Luck.Walnut.Client
 {
     public class LuckWalnutConfigurationSource : IConfigurationSource
     {
+        /// <summary>
+        /// 项目配置
+        /// </summary>
         public LuckWalnutConfig LuckWalnutConfig { get; set; } = default!;
-
-        /// <summary>
-        /// 应用标识
-        /// </summary>
-        public string AppId { get; set; } = default!;
-
-        /// <summary>
-        /// 项目环境
-        /// </summary>
-        public string Environment { get; set; } = default!;
         /// <summary>
         /// 
         /// </summary>
