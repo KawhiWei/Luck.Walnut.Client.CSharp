@@ -11,7 +11,7 @@ namespace Luck.Walnut.Client
         private IDictionary<string, IDictionary<string, string>> _projectsConfigs;
         private IDictionary<string, IDictionary<string, string>> _projectsVersions;
         private readonly ILuckWalnutSourceManager _luckWalnutSourceManager;
-        public event Action<string> ProjectConfigChanged;
+        public event Action? ProjectConfigChanged;
 
         public LuckWalnutConfigCenterHelper(LuckWalnutConfig luckWalnutConfig)
         {
@@ -26,12 +26,17 @@ namespace Luck.Walnut.Client
         {
             try
             {
-                var configDic = luckWalnutConfigs.Configs.ToDictionary(config => config.Key, config => config.Value);
-                _projectsConfigs[_luckWalnutConfig.AppId] = configDic;
+                
+                var configDic = luckWalnutConfigs.Configs?.ToDictionary(config => config.Key, config => config.Value);
+                if(!string.IsNullOrEmpty(_luckWalnutConfig.AppId))
+                {
+                    _projectsConfigs[_luckWalnutConfig.AppId] = configDic??new Dictionary<string, string>();    
+                }
+                
             }
-            catch (Exception es)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine(ex);
             }
         }
 
@@ -72,22 +77,40 @@ namespace Luck.Walnut.Client
                 }
             });
 
+            _luckWalnutSourceManager.Watching();
+            _luckWalnutSourceManager.ProjectConfigSourceChanged += OnProjectConfigSourceChanged;
             _manualResetEventSlim.Wait();
             task.Wait();
         }
 
-        public void OnProjectConfigSourceChanged()
+        
+        /// <summary>
+        /// 配置版本变更导致配置需要重新同步
+        /// </summary>
+        /// <returns></returns>
+        private async Task OnProjectConfigSourceChanged()
         {
+            var projectConfigs = await _luckWalnutSourceManager.GetProjectConfigs();
+            SetProjectsConfigs(projectConfigs);
             try
             {
-                ProjectConfigChanged?.Invoke(_luckWalnutConfig.AppId);
+                if (ProjectConfigChanged is not null)
+                {
+                    ProjectConfigChanged.Invoke();    
+                }
+                
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e);
+                Console.WriteLine(ex);
+                // Log.Warn(ex, $"{appUK} ConfigChanged");
             }
         }
-        
+
+        public IDictionary<string, IDictionary<string, string>> GetNewProjectConfigs()
+        {
+            return _projectsConfigs;
+        }
         public IDictionary<string, IDictionary<string, string>> GetConfig()
         {
             GetProjectConfigs();

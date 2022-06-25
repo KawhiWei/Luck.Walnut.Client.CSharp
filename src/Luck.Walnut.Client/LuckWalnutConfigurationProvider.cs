@@ -26,11 +26,12 @@ namespace Luck.Walnut.Client
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="appId"></param>
-        private void OnProjectConfigChanged(string appId)
+        private void OnProjectConfigChanged()
         {
-            var configs= LuckWalnutConfigCenterHelper.GetConfig();
+            var configs= LuckWalnutConfigCenterHelper.GetNewProjectConfigs();
             Data= LuckWalnutJsonConfigurationJsonParser.Parse(configs,Source.LuckWalnutConfig.AppId);
+            Console.WriteLine($"接收到消息刷新完成{DateTime.Now}");
+            OnReload();
         }
 
         public override void Load()

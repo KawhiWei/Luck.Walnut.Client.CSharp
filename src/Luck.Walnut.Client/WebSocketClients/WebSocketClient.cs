@@ -30,11 +30,11 @@ namespace Luck.Walnut.Client.WebSocketClients
         /// <summary>
         /// 创建 WebSocketClient 类的实例。
         /// </summary>
-        public WebSocketClient(IServiceProvider serviceProvider)
+        public WebSocketClient()
         {
             _ws = new ClientWebSocket();
             _ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(5);
-            _logger = serviceProvider.GetService<ILogger>();
+            // _logger? = serviceProvider.GetService<ILogger>();
         }
 
         /// <summary>
@@ -62,17 +62,17 @@ namespace Luck.Walnut.Client.WebSocketClients
             catch (ArgumentException ex)
             {
                 var errorMessage = "必须以'ws://'或'wss://'开头，也许你应该设置ignoreScheme参数为ture";
-                _logger.LogError($"uri{errorMessage}");
+                _logger?.LogError($"uri{errorMessage}");
                 throw new ArgumentException(errorMessage, nameof(uri));
             }
             catch (TaskCanceledException ex)
             {
-                _logger.LogWarning($"连接到{uri}超时");
+                _logger?.LogWarning($"连接到{uri}超时");
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ConnectAsync");
+                _logger?.LogError(ex, "ConnectAsync");
                 return false;
             }
         }
@@ -139,7 +139,7 @@ namespace Luck.Walnut.Client.WebSocketClients
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "SendMessageAsync");
+                _logger?.LogError(ex, "SendMessageAsync");
                 return false;
             }
             return true;
@@ -167,7 +167,7 @@ namespace Luck.Walnut.Client.WebSocketClients
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "SendDataAsync");
+                    _logger?.LogError(ex, "SendDataAsync");
                     return false;
                 }
             }
@@ -223,7 +223,7 @@ namespace Luck.Walnut.Client.WebSocketClients
             }
             catch (Exception ex)
             {
-                //_logger.LogError(ex, "DoReceiveAsync");
+                //_logger?.LogError(ex, "DoReceiveAsync");
                 CallOnDisconnected();
                 //_ws.Dispose();
                 return null;
@@ -241,7 +241,7 @@ namespace Luck.Walnut.Client.WebSocketClients
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "OnReceiveMessage");
+                    _logger?.LogWarning(ex, "OnReceiveMessage");
                 }
             }
         }
@@ -257,7 +257,7 @@ namespace Luck.Walnut.Client.WebSocketClients
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "OnReceiveData");
+                    _logger?.LogWarning(ex, "OnReceiveData");
                 }
             }
         }
@@ -271,7 +271,7 @@ namespace Luck.Walnut.Client.WebSocketClients
             }
             catch (Exception ex)
             {
-                //_logger.LogWarning(ex, "CloseAsync");
+                //_logger?.LogWarning(ex, "CloseAsync");
             }
 
             if (_onDisconnected != null)
@@ -282,7 +282,7 @@ namespace Luck.Walnut.Client.WebSocketClients
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "OnDisconnected");
+                    _logger?.LogWarning(ex, "OnDisconnected");
                 }
             }
             try
@@ -291,7 +291,7 @@ namespace Luck.Walnut.Client.WebSocketClients
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Dispose");
+                _logger?.LogWarning(ex, "Dispose");
             }
         }
 
@@ -307,7 +307,7 @@ namespace Luck.Walnut.Client.WebSocketClients
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "OnConnected");
+                    _logger?.LogWarning(ex, "OnConnected");
                 }
             }
         }

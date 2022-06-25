@@ -35,7 +35,7 @@ namespace Microsoft.Extensions.Configuration
                 x.WebSocketUri = luckWalnutConfig.WebSocketUri;
             });
             configurationbuilder.AddLuckWalnutConfig(configuration, luckWalnutConfig, configureSource);
-            services.AddHostedService<WebSocketBackgroundService>();
+            // services.AddHostedService<WebSocketBackgroundService>();
             return services;
 
         }

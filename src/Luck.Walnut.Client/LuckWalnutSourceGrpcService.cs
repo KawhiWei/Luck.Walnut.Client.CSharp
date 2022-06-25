@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.Json;
 using Grpc.Net.Client;
 using Luck.Walnut.V1;
 
@@ -27,10 +28,9 @@ namespace Luck.Walnut.Client
             //var dic = LuckWalnutJsonConfigurationFileParser.Parse(results.Result.First().Value);
         }
 
-        public static async Task<ProjectConfigAdapter> GetProjectConfigForResetFulApi(string serverUri,string appId, string environment)
+        public static async Task<ProjectConfigAdapter?> GetProjectConfigForResetFulApi(string serverUri,string appId, string environment)
         {
             
-            ProjectConfigAdapter result = new ProjectConfigAdapter();
             using (var client=new HttpClient())
             {
                var response= await client.GetAsync($"{serverUri}/walnut/api/environment/{appId}/{environment}/config");
@@ -39,12 +39,24 @@ namespace Luck.Walnut.Client
                     throw new Exception($"{response.StatusCode}");
                 }
                 var content = await response.Content.ReadAsStringAsync();
-
+               var result= content.Deserialize<Response<ProjectConfigAdapter>>(new JsonSerializerOptions()
+               {
+                   PropertyNameCaseInsensitive=true,
+               });
+               return result?.Result ?? new ProjectConfigAdapter();
 
             }
-
-            return result;
         }
         
+    }
+    public  class  Response<T>
+    {
+        public T Result { get; set; } = default!;
+
+        public bool Success { get; set; } = default!;
+        
+        public  string ErrorMessage { get; set; } = default!;
+        
+        public  string ErrorCode { get; set; } = default!;
     }
 }
