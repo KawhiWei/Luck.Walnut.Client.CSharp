@@ -17,13 +17,26 @@ namespace Luck.Walnut.Client
         {
             Source = source;
             LuckWalnutConfigCenterHelper = new LuckWalnutConfigCenterHelper(Source.LuckWalnutConfig);
+            if (Source.ReloadOnChange)
+            {
+                LuckWalnutConfigCenterHelper.ProjectConfigChanged += OnProjectConfigChanged;
+            }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="appId"></param>
+        private void OnProjectConfigChanged(string appId)
+        {
+            var configs= LuckWalnutConfigCenterHelper.GetConfig();
+            Data= LuckWalnutJsonConfigurationJsonParser.Parse(configs,Source.LuckWalnutConfig.AppId);
+        }
 
         public override void Load()
         {
-            var test= LuckWalnutConfigCenterHelper.GetConfig();
-            Data= LuckWalnutJsonConfigurationJsonParser.Parse(test,Source.LuckWalnutConfig.AppId);
+            var configs= LuckWalnutConfigCenterHelper.GetConfig();
+            Data= LuckWalnutJsonConfigurationJsonParser.Parse(configs,Source.LuckWalnutConfig.AppId);
             base.Load();
         }
 

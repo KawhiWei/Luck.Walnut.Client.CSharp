@@ -1,8 +1,4 @@
-﻿using Grpc.Net.Client;
-using Luck.Walnut.Client.WebSocketClients;
-using Luck.Walnut.V1;
-
-namespace Luck.Walnut.Client
+﻿namespace Luck.Walnut.Client
 {
     public class LuckWalnutSourceManager: ILuckWalnutSourceManager
     {
@@ -12,6 +8,6 @@ namespace Luck.Walnut.Client
             _luckWalnutConfig = luckWalnutConfig;   
         }
 
-        public Task<IEnumerable<LuckWalnutConfigAdapter>> GetProjectConfigs()=> LuckWalnutSourceGrpcService.GetProjectConfigs(_luckWalnutConfig.ServerUri, _luckWalnutConfig.AppId, _luckWalnutConfig.Environment);
+        public Task<ProjectConfigAdapter> GetProjectConfigs()=> LuckWalnutSourceGrpcService.GetProjectConfigForResetFulApi(_luckWalnutConfig.ServerUri, _luckWalnutConfig.AppId, _luckWalnutConfig.Environment);
     }
 }

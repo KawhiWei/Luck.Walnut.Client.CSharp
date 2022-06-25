@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using Luck.Walnut.Client.WebSocketClients;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,13 +15,13 @@ namespace Luck.Walnut.Client
         private readonly IServiceProvider _serviceProvider;
         private readonly LuckWalnutConfig _luckWalnutConfig;
         private  readonly  ILogger<WebSocketBackgroundService> _logger;
-
         public WebSocketBackgroundService(IServiceProvider serviceProvider, IOptions<LuckWalnutConfig> options,ILogger<WebSocketBackgroundService> logger)
         {
             _luckWalnutConfig = options.Value;
             _luckWalnutConfigCenterHelper = new LuckWalnutConfigCenterHelper(_luckWalnutConfig);
             _serviceProvider = serviceProvider;
             _logger = logger;
+
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -43,7 +45,6 @@ namespace Luck.Walnut.Client
                 {
                     break;
                 }
-
                 _client.Dispose();
                 await Task.Delay(i * 100);
             }
@@ -88,6 +89,7 @@ namespace Luck.Walnut.Client
         /// <param name="message"></param>
         private async Task OnReceiveMessage(WebSocketClient client, string message)
         {
+            await Task.CompletedTask;
             try
             {
                 var cmdResult = message.Deserialize<WSResponseScheme>();
@@ -95,9 +97,12 @@ namespace Luck.Walnut.Client
                 {
                     return;
                 }
-                else if(cmdResult?.Body.ToString() == "reload")
+                if(cmdResult?.Body.ToString() == "reload")
                 {
                     
+                    var test = _serviceProvider.CreateScope().ServiceProvider
+                        .GetRequiredService<IConfigurationProvider>();
+                    _luckWalnutConfigCenterHelper.OnProjectConfigSourceChanged();
                 }
             }
             catch (Exception exception)
@@ -110,7 +115,7 @@ namespace Luck.Walnut.Client
         private async Task SendWatchProjectAsync()
         {
             await Task.CompletedTask;
-            var appId = $"{_luckWalnutConfig.AppId}{Guid.NewGuid().ToString().Replace("-", "")}";
+            var appId = $"{_luckWalnutConfig.AppId}";//{Guid.NewGuid().ToString().Replace("-", "")}
             var requestCmd = new Commad {  TargetAction = "im.clientlogin", Body = new 
             {
                 appId=appId

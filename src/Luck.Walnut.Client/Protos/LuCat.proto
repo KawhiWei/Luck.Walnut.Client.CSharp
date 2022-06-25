@@ -1,9 +1,9 @@
 ﻿syntax = "proto3";
 
-option csharp_namespace = "Testshaungxiangliu.Protos";
+option csharp_namespace = "Luck.Walnut.Api.Protos";
 
 import "google/protobuf/empty.proto";
-package LuCat; //定义包名
+package Luck.Walnut.Api; //定义包名
 
 //定义服务
 service LuCat{

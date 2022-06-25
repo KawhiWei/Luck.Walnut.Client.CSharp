@@ -8,7 +8,7 @@
       "applicationUrl": "http://localhost:5010",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "test",
-        "AppId": "walnut"
+        "AppId": "luck.walnut"
       }
     }
   }

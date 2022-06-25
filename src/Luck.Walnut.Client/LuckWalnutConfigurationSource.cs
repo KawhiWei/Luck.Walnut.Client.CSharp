@@ -13,6 +13,7 @@ namespace Luck.Walnut.Client
         /// </summary>
         public bool ReloadOnChange { get; internal set; } = true;
 
+        
         public IConfigurationProvider Build(IConfigurationBuilder builder)
         {
             return new LuckWalnutConfigurationProvider(this);

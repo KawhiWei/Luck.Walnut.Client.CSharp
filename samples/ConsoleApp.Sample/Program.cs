@@ -3,8 +3,7 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
-using Luck.Walnut.Client;
-using Testshaungxiangliu.Protos;
+using Luck.Walnut.Api.Protos;
 
 var channel = GrpcChannel.ForAddress("http://localhost:5264");
 var catClient = new LuCat.LuCatClient(channel);

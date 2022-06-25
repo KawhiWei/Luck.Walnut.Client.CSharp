@@ -20,7 +20,6 @@ namespace Luck.Walnut.Client
 
             return results.Result.Select(config => new LuckWalnutConfigAdapter
             {
-
                 Key = config.Key,
                 Value = config.Value,
                 Type = config.Type,
@@ -28,10 +27,10 @@ namespace Luck.Walnut.Client
             //var dic = LuckWalnutJsonConfigurationFileParser.Parse(results.Result.First().Value);
         }
 
-        public static async Task<IEnumerable<LuckWalnutConfigAdapter>> GetProjectConfigForResetFulApi(string serverUri,string appId, string environment)
+        public static async Task<ProjectConfigAdapter> GetProjectConfigForResetFulApi(string serverUri,string appId, string environment)
         {
             
-            List<LuckWalnutConfigAdapter> result = new List<LuckWalnutConfigAdapter>();
+            ProjectConfigAdapter result = new ProjectConfigAdapter();
             using (var client=new HttpClient())
             {
                var response= await client.GetAsync($"{serverUri}/walnut/api/environment/{appId}/{environment}/config");
@@ -39,7 +38,6 @@ namespace Luck.Walnut.Client
                 {
                     throw new Exception($"{response.StatusCode}");
                 }
-                
                 var content = await response.Content.ReadAsStringAsync();
 
 
