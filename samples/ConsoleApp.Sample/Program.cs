@@ -33,6 +33,11 @@ Console.WriteLine("接收洗澡结果：");
 //开始接收响应
 await bathCatRespTask;
 
+while(true)
+{
+    Thread.Sleep(10000);
+}
+
 Console.WriteLine("洗澡完毕");
 
 
